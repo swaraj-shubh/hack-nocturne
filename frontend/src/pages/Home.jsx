@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#f4f7f9] text-slate-900 relative overflow-hidden font-sans selection:bg-cyan-100 selection:text-cyan-900">
+    <div className="min-h-screen bg-slate-200 text-slate-900 relative overflow-hidden font-sans selection:bg-cyan-100 selection:text-cyan-900">
       {/* Light Tech Background */}
       <div className="absolute inset-0 z-0">
         {/* Subtle radial tech glow */}

@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { startRegistration } from "@simplewebauthn/browser";
 import axios from "axios";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { Shield, User, Mail } from "lucide-react";
-import { generateAndReturnPQKeys } from "../utils/crypto"; // your PQ keygen util
+import { Shield, User, Mail, Loader2, Cpu } from "lucide-react";
+import { generateAndReturnPQKeys } from "../utils/crypto";
 
-const API_URL = "https://localhost:8000/api/v1/auth"; // adjust backend URL
+const API_URL = "https://localhost:8000/api/v1/auth"; 
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -83,76 +84,92 @@ export default function Register() {
   const isFormValid = username && email && validateEmail(email);
 
   return (
-    <div className="min-h-screen bg-black text-[#00ff99] relative overflow-hidden flex items-center justify-center px-4">
-      {/* Neon grid background */}
+    <div className="min-h-screen bg-slate-200 text-slate-900 relative overflow-hidden flex items-center justify-center px-4 font-sans selection:bg-cyan-100 selection:text-cyan-900">
+      {/* Light Tech Background */}
       <div className="absolute inset-0 z-0">
-        <div className="w-full h-full bg-[radial-gradient(circle_at_center,_rgba(0,255,100,0.05)_0%,_black_80%)]"></div>
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(90deg,rgba(0,255,100,0.2)_1px,transparent_1px),linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,209,255,0.08)_0%,_transparent_50%)]" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(90deg,rgba(0,149,255,0.2)_1px,transparent_1px),linear-gradient(rgba(0,149,255,0.2)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        
+        {/* Floating Glass Orbs */}
+        <div className="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-cyan-200/20 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-purple-200/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Animations */}
       <style>
         {`
-          @keyframes flicker {
-            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.4; }
-          }
-          @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-          }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .animate-scanline {
+          animation: scanline 8s linear infinite;
+        }
+        .cyber-glass {
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          box-shadow: 0 8px 32px 0 rgba(0, 149, 255, 0.05);
+        }
+        .cyber-button-clip {
+          clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
         `}
       </style>
 
-      {/* Scanning line */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="w-full h-1 bg-[#00ff99]/20 animate-[scan_4s_linear_infinite]"></div>
+      {/* Moving Scanline */}
+      <div className="absolute inset-0 pointer-events-none z-10 opacity-20">
+        <div className="w-full h-[2px] bg-cyan-400/30 animate-scanline"></div>
       </div>
 
       {/* Registration Card */}
-      <div className="relative z-10 bg-[#001a0d]/60 border border-[#00ff99]/20 rounded-2xl shadow-[0_0_30px_#00ff9940] backdrop-blur-md p-8 w-full max-w-md">
-        <div className="text-center space-y-3 mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#00ff99]/20 rounded-full shadow-[0_0_20px_#00ff99a0]">
-            <Shield className="w-8 h-8 text-[#00ff99]" />
+      <div className="relative z-20 cyber-glass p-8 md:p-12 w-full max-w-md rounded-none border-t-4 border-cyan-500 shadow-2xl">
+        <div className="text-center space-y-4 mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-slate-200 rounded-none transform rotate-45 shadow-sm">
+            <Cpu className="w-8 h-8 text-cyan-600 transform -rotate-45" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-widest text-[#00ff99] drop-shadow-[0_0_15px_#00ff99] animate-[flicker_2s_infinite]">
-            ENLISTMENT PORTAL
-          </h1>
-          <p className="text-sm text-[#00ff99aa] font-mono">
-            Quantum-Safe Identity Enrollment
+          <div className="pt-2">
+            <h1 className="text-2xl font-black tracking-[0.15em] text-slate-900 uppercase">
+              ENLIST<span className="text-cyan-600">_IDENTITY</span>
+            </h1>
+            <div className="h-1 w-12 bg-cyan-500 mx-auto mt-2"></div>
+          </div>
+          <p className="text-[10px] text-slate-500 font-bold tracking-[0.3em] uppercase">
+            Initialize PQC Lattice Enrollment
           </p>
         </div>
 
         <form onSubmit={handleRegister} className="space-y-5">
           {/* Username */}
-          <div>
-            <label className="text-sm font-mono text-[#00ff99bb] flex items-center gap-2 mb-1">
-              <User className="w-4 h-4 text-[#00ff99]" />
-              Username
+          <div className="group">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2 group-focus-within:text-cyan-600">
+              <User className="w-3 h-3" />
+              Designation
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value.trim())}
-              placeholder="e.g., neo_the_one"
-              className="w-full bg-black/40 border border-[#00ff99]/30 rounded-md px-3 py-2 text-[#00ffcc] font-mono placeholder-[#00ff9966] focus:ring-2 focus:ring-[#00ff99] focus:border-[#00ff99] outline-none transition-all"
+              placeholder="e.g., operator_01"
+              className="w-full bg-white/50 border border-slate-200 rounded-none px-4 py-3 text-slate-900 font-mono text-sm placeholder-slate-300 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/10 outline-none transition-all"
               disabled={isLoading}
               required
             />
           </div>
 
           {/* Email */}
-          <div>
-            <label className="text-sm font-mono text-[#00ff99bb] flex items-center gap-2 mb-1">
-              <Mail className="w-4 h-4 text-[#00ff99]" />
-              Email Address
+          <div className="group">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2 group-focus-within:text-cyan-600">
+              <Mail className="w-3 h-3" />
+              Comms_Channel
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value.trim())}
-              placeholder="e.g., neo@matrix.com"
-              className="w-full bg-black/40 border border-[#00ff99]/30 rounded-md px-3 py-2 text-[#00ffcc] font-mono placeholder-[#00ff9966] focus:ring-2 focus:ring-[#00ff99] focus:border-[#00ff99] outline-none transition-all"
+              placeholder="operator@network.xyz"
+              className="w-full bg-white/50 border border-slate-200 rounded-none px-4 py-3 text-slate-900 font-mono text-sm placeholder-slate-300 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/10 outline-none transition-all"
               disabled={isLoading}
               required
             />
@@ -162,23 +179,45 @@ export default function Register() {
           <button
             type="submit"
             disabled={!isFormValid || isLoading}
-            className="w-full py-2.5 mt-2 rounded-md font-semibold text-black bg-[#00ff99] hover:bg-[#00e688] hover:scale-105 transition-all duration-300 shadow-[0_0_20px_#00ff99] disabled:bg-[#00ff9940] disabled:text-[#00331f] flex items-center justify-center"
+            className="w-full py-4 bg-slate-900 text-white font-black tracking-[0.2em] uppercase cyber-button-clip hover:bg-cyan-600 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
-            {isLoading ? "Registering..." : "Create Secure Identity"}
+            {isLoading ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                ENROLLING...
+              </>
+            ) : (
+              "Initialize Enrollment"
+            )}
           </button>
         </form>
 
-        {/* Info box */}
-        <div className="mt-6 bg-[#00331f]/60 border border-[#00ff99]/20 rounded-lg p-3 font-mono text-xs text-[#00ffcc]">
+        {/* Info Box */}
+        {/* <div className="mt-8 bg-cyan-50/50 border-l-2 border-cyan-400 p-4 font-mono text-[10px] text-slate-500 leading-relaxed">
           <p>
-            <strong className="text-[#00ff99]">Note:</strong> Your private keys remain securely in your browser vault and are never transmitted.
+            <strong className="text-cyan-700">SECURITY_NOTICE:</strong> Private keys (Kyber/Dilithium) are generated locally. Your browser vault acts as the hardware-root.
+          </p>
+        </div> */}
+
+        <div className="text-center mt-6">
+          <p className="text-slate-400 text-[10px] font-bold tracking-widest uppercase">
+            Already cleared? <Link to="/login" className="text-cyan-600 hover:underline">Access Terminal</Link>
           </p>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="absolute bottom-0 w-full py-4 text-center text-xs text-[#00ff99aa] font-mono border-t border-[#00ff99]/10">
-        [ REGISTRATION NODE: ACTIVE ] • Encryption: PQC Lattice Hybrid • Clearance Level: BRAVO
+      {/* Modern Status Footer */}
+      <footer className="fixed bottom-0 w-full px-8 py-4 bg-white/30 backdrop-blur-xl border-t border-white/80 flex flex-col md:flex-row justify-between items-center gap-4 z-30">
+        <div className="flex items-center gap-6 text-[10px] font-bold tracking-widest text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
+            REG_NODE: ACTIVE
+          </div>
+          <div>VAULT: LOCAL_BROWSER</div>
+        </div>
+        <div className="text-[10px] font-black text-cyan-600/60 uppercase tracking-[0.2em]">
+          Level Bravo Clearance Pending
+        </div>
       </footer>
     </div>
   );

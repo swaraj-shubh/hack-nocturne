@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuthStore } from '../context/useAuthStore';
 import { Shield, User, Loader2 } from 'lucide-react';
@@ -84,58 +84,74 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-[#00ff99] relative overflow-hidden flex items-center justify-center px-4">
-      {/* Neon grid background */}
+    <div className="min-h-screen bg-slate-200 text-slate-900 relative overflow-hidden flex items-center justify-center px-4 font-sans selection:bg-cyan-100 selection:text-cyan-900">
+      {/* Light Tech Background */}
       <div className="absolute inset-0 z-0">
-        <div className="w-full h-full bg-[radial-gradient(circle_at_center,_rgba(0,255,100,0.05)_0%,_black_80%)]"></div>
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(90deg,rgba(0,255,100,0.2)_1px,transparent_1px),linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,209,255,0.08)_0%,_transparent_50%)]" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(90deg,rgba(0,149,255,0.2)_1px,transparent_1px),linear-gradient(rgba(0,149,255,0.2)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        
+        {/* Floating Glass Orbs */}
+        <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-cyan-200/20 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-purple-200/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* Animations */}
       <style>
         {`
-          @keyframes flicker {
-            0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
-            20%, 24%, 55% { opacity: 0.4; }
-          }
-          @keyframes scan {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-          }
+        @keyframes scanline {
+          0% { transform: translateY(-100%); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .animate-scanline {
+          animation: scanline 8s linear infinite;
+        }
+        .cyber-glass {
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+          box-shadow: 0 8px 32px 0 rgba(0, 149, 255, 0.05);
+        }
+        .cyber-button-clip {
+          clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+        }
         `}
       </style>
 
-      {/* Scanning line */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="w-full h-1 bg-[#00ff99]/20 animate-[scan_4s_linear_infinite]"></div>
+      {/* Moving Scanline */}
+      <div className="absolute inset-0 pointer-events-none z-10 opacity-20">
+        <div className="w-full h-[2px] bg-cyan-400/30 animate-scanline"></div>
       </div>
 
-      {/* Login card */}
-      <div className="relative z-10 bg-[#001a0d]/60 border border-[#00ff99]/20 rounded-2xl shadow-[0_0_30px_#00ff9940] backdrop-blur-md p-8 w-full max-w-md">
-        <div className="text-center space-y-3 mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#00ff99]/20 rounded-full shadow-[0_0_20px_#00ff99a0]">
-            <Shield className="w-8 h-8 text-[#00ff99]" />
+      {/* Login Card */}
+      <div className="relative z-20 cyber-glass p-8 md:p-12 w-full max-w-md rounded-none border-t-4 border-cyan-500 shadow-2xl">
+        <div className="text-center space-y-4 mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-white border border-slate-200 rounded-none transform rotate-45 shadow-sm">
+            <Shield className="w-8 h-8 text-cyan-600 transform -rotate-45" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-widest text-[#00ff99] drop-shadow-[0_0_15px_#00ff99] animate-[flicker_2s_infinite]">
-            ACCESS TERMINAL
-          </h1>
-          <p className="text-sm text-[#00ff99aa] font-mono">
-            Authenticate using secure hardware token
+          <div className="pt-2">
+            <h1 className="text-2xl font-black tracking-[0.2em] text-slate-900 uppercase">
+              ACCESS<span className="text-cyan-600">_TERMINAL</span>
+            </h1>
+            <div className="h-1 w-12 bg-cyan-500 mx-auto mt-2"></div>
+          </div>
+          <p className="text-[10px] text-slate-500 font-bold tracking-[0.3em] uppercase">
+            Hardware Encryption Protocol Active
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="text-sm font-mono text-[#00ff99bb] flex items-center gap-2 mb-1">
-              <User className="w-4 h-4 text-[#00ff99]" />
-              Username
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="group">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2 transition-colors group-focus-within:text-cyan-600">
+              <User className="w-3 h-3" />
+              User_Callsign
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your call-sign"
-              className="w-full bg-black/40 border border-[#00ff99]/30 rounded-md px-3 py-2 text-[#00ffcc] font-mono placeholder-[#00ff9966] focus:ring-2 focus:ring-[#00ff99] focus:border-[#00ff99] outline-none transition-all"
+              placeholder="ENTER USERNAME..."
+              className="w-full bg-white/50 border border-slate-200 rounded-none px-4 py-3 text-slate-900 font-mono text-sm placeholder-slate-300 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-500/10 outline-none transition-all"
               disabled={isLoading}
               required
             />
@@ -144,32 +160,41 @@ export default function Login() {
           <button
             type="submit"
             disabled={!username || isLoading}
-            className="w-full py-2.5 mt-2 rounded-md font-semibold text-black bg-[#00ff99] hover:bg-[#00e688] hover:scale-105 transition-all duration-300 shadow-[0_0_20px_#00ff99] flex items-center justify-center disabled:bg-[#00ff9940] disabled:text-[#00331f]"
+            className="w-full py-4 bg-slate-900 text-white font-black tracking-[0.2em] uppercase cyber-button-clip hover:bg-cyan-600 transition-all duration-300 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {isLoading ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Verifying...
+                <Loader2 className="w-5 h-5 animate-spin" />
+                VERIFYING...
               </>
             ) : (
-              'Login with Secure Key'
+              'Initialize Login'
             )}
           </button>
         </form>
 
-        <div className="text-center mt-6">
-          <p className="text-[#00ff99aa] text-sm font-mono">
-            No access credentials?{' '}
-            <a href="/register" className="text-[#00ffcc] hover:underline hover:text-[#00ff99] transition">
-              Request clearance
-            </a>
+        <div className="text-center mt-8">
+          <p className="text-slate-400 text-[10px] font-bold tracking-widest">
+            NO ACCESS CREDENTIALS?{' '}
+            <Link to="/register" className="text-cyan-600 hover:text-cyan-700 underline-offset-4 hover:underline transition-colors uppercase">
+              Register
+            </Link>
           </p>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="absolute bottom-0 w-full py-4 text-center text-xs text-[#00ff99aa] font-mono border-t border-[#00ff99]/10">
-        [ AUTH SERVER: ACTIVE ] • Encryption: PQC Hybrid AES-4096 • Clearance Level: ALPHA
+      {/* Modern Status Footer */}
+      <footer className="fixed bottom-0 w-full px-8 py-4 bg-white/30 backdrop-blur-xl border-t border-white/80 flex flex-col md:flex-row justify-between items-center gap-4 z-30">
+        <div className="flex items-center gap-6 text-[10px] font-bold tracking-widest text-slate-500">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span>
+            AUTH_SERVER: ONLINE
+          </div>
+          <div className="hidden md:block">MODE: PQC_HYBRID_AES</div>
+        </div>
+        <div className="text-[10px] font-black text-cyan-600/60 uppercase tracking-[0.2em]">
+          Classified Access Only — Auth Required
+        </div>
       </footer>
     </div>
   );

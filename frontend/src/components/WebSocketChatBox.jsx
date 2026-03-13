@@ -30,7 +30,7 @@ export default function WebSocketChatBox({ peer }) {
   const [kyberPrivateKey, setKyberPrivateKey] = useState(null);
   const [dilithiumPrivateKey, setDilithiumPrivateKey] = useState(null);
 
-  // LOGIC PRESERVATION: (All your existing useEffects and functions remain exactly the same)
+  // LOGIC PRESERVATION: (Existing effects and functions remain identical)
   useEffect(() => {
     const initDB = async () => {
       try {
@@ -226,43 +226,43 @@ export default function WebSocketChatBox({ peer }) {
     } catch (error) { setStatus("❌ Security failure"); }
   };
 
-  // UI RENDERING - Updated to Light Cyber Theme
+  // UI RENDERING - Updated to Industrial Orange & Matte Black
   if (!user || !peer || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] bg-white/40 backdrop-blur-md border border-slate-200">
-        <Loader2 className="animate-spin h-8 w-8 text-cyan-500 mb-4" />
-        <p className="text-[10px] font-black tracking-[0.3em] text-slate-500 uppercase">SYNCING_DEVICES...</p>
+      <div className="flex flex-col items-center justify-center h-[500px] bg-[#0a0a0a]/80 backdrop-blur-xl border border-orange-900/30">
+        <Loader2 className="animate-spin h-8 w-8 text-orange-600 mb-4" />
+        <p className="text-[10px] font-black tracking-[0.3em] text-zinc-500 uppercase">SYNCING_DEVICES...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-white/20 backdrop-blur-xl relative overflow-hidden flex-1">
-      {/* Blueprint Grid Background */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div className="w-full h-full bg-[linear-gradient(90deg,rgba(0,149,255,0.2)_1px,transparent_1px),linear-gradient(rgba(0,149,255,0.2)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
+    <div className="flex flex-col h-full w-full bg-[#0a0a0a]/40 backdrop-blur-xl relative overflow-hidden flex-1 selection:bg-orange-500/30 selection:text-orange-200">
+      {/* Hardware Blueprint Grid Background */}
+      <div className="absolute inset-0 opacity-[0.04] pointer-events-none">
+        <div className="w-full h-full bg-[linear-gradient(90deg,rgba(255,102,0,0.2)_1px,transparent_1px),linear-gradient(rgba(255,102,0,0.2)_1px,transparent_1px)] bg-[size:30px_30px]"></div>
       </div>
 
       {/* Header Panel */}
-      <header className="px-6 py-4 bg-white/60 backdrop-blur-md border-b border-slate-200/60 z-10 flex items-center justify-between">
+      <header className="px-6 py-4 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-orange-900/40 z-10 flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="relative">
             <div 
               style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
-              className="w-10 h-10 bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-lg"
+              className="w-10 h-10 bg-orange-600 text-black flex items-center justify-center font-black text-sm shadow-[0_0_15px_rgba(234,88,12,0.3)]"
             >
               {peer.username?.charAt(0).toUpperCase()}
             </div>
-            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${isUserOnline ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-300'}`}></div>
+            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-black ${isUserOnline ? 'bg-orange-500 shadow-[0_0_8px_#ea580c]' : 'bg-zinc-800'}`}></div>
           </div>
           <div>
-            <h2 className="text-sm font-black tracking-tight text-slate-900 uppercase">{peer.username}</h2>
-            <div className="text-[9px] font-bold text-cyan-600 tracking-widest uppercase">NODE_LINK: STABLE</div>
+            <h2 className="text-sm font-black tracking-tight text-white uppercase italic">{peer.username}</h2>
+            <div className="text-[9px] font-bold text-orange-500 tracking-widest uppercase">NODE_LINK: STABLE</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{status}</div>
-          <div className="flex items-center gap-1 justify-end mt-0.5 text-[9px] text-cyan-500 font-black tracking-widest">
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">{status}</div>
+          <div className="flex items-center gap-1 justify-end mt-0.5 text-[9px] text-orange-500 font-black tracking-widest uppercase italic">
             <Shield className="w-3 h-3" /> PQC_ACTIVE
           </div>
         </div>
@@ -272,29 +272,31 @@ export default function WebSocketChatBox({ peer }) {
       <main className="flex-1 p-6 overflow-y-auto z-10 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-30">
-            <div className="p-5 border border-slate-200 rounded-none rotate-45 mb-6">
-              <Lock className="w-6 h-6 text-slate-400 -rotate-45" />
+            <div className="p-5 border border-orange-900/30 rounded-none rotate-45 mb-6">
+              <Lock className="w-6 h-6 text-orange-900 -rotate-45" />
             </div>
-            <p className="text-[10px] font-black tracking-[0.4em] text-slate-500 uppercase">Initialize_Secure_Comms</p>
+            <p className="text-[10px] font-black tracking-[0.4em] text-zinc-600 uppercase">Initialize_Secure_Comms</p>
           </div>
         ) : (
           messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
               <div 
-                className={`max-w-[80%] px-5 py-3 shadow-sm border ${
+                className={`max-w-[80%] px-5 py-3 shadow-lg border ${
                   msg.sender === "me"
-                    ? "bg-slate-900 text-white border-slate-800 rounded-none shadow-indigo-100"
-                    : "bg-white/80 text-slate-800 border-slate-200 rounded-none"
+                    ? "bg-orange-600 text-black border-orange-700 rounded-none shadow-orange-900/20"
+                    : "bg-zinc-900/90 text-white border-orange-900/30 rounded-none"
                 }`}
-                style={{ clipPath: msg.sender === 'me' ? 'polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%)' : 'polygon(5% 0, 100% 0, 100% 100%, 0 100%, 0 15%)' }}
+                style={{ 
+                    clipPath: msg.sender === 'me' ? 'polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%)' : 'polygon(5% 0, 100% 0, 100% 100%, 0 100%, 0 15%)' 
+                }}
               >
                 <p className="text-xs font-medium leading-relaxed">{msg.text}</p>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
-                  <span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-black/10">
+                  <span className={`text-[8px] font-black uppercase tracking-tighter ${msg.sender === "me" ? "text-orange-900" : "text-zinc-500"}`}>
                     {new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </span>
                   {msg.sender === "them" && msg.signatureVerified !== null && (
-                    <div className={`text-[8px] font-black tracking-widest flex items-center gap-1 uppercase ${msg.signatureVerified ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <div className={`text-[8px] font-black tracking-widest flex items-center gap-1 uppercase ${msg.signatureVerified ? 'text-orange-500' : 'text-red-500'}`}>
                       {msg.signatureVerified ? <CheckCircle className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}
                       {msg.signatureVerified ? 'VERIFIED' : 'TAMPERED'}
                     </div>
@@ -308,7 +310,7 @@ export default function WebSocketChatBox({ peer }) {
       </main>
 
       {/* Input Panel */}
-      <footer className="p-6 bg-white/60 backdrop-blur-md border-t border-slate-200 z-10">
+      <footer className="p-6 bg-[#0a0a0a]/90 backdrop-blur-md border-t border-orange-900/40 z-10">
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <input
@@ -317,7 +319,7 @@ export default function WebSocketChatBox({ peer }) {
               onChange={(e) => setInput(e.target.value)}
               placeholder="ENCRYPT_DATA_PACKET..."
               onKeyDown={(e) => { if (e.key === "Enter" && input.trim()) sendMessage(); }}
-              className="w-full px-5 py-4 bg-white/80 border border-slate-200 text-xs font-bold tracking-tight text-slate-900 placeholder-slate-300 focus:outline-none focus:border-cyan-500 transition-all rounded-none"
+              className="w-full px-5 py-4 bg-[#111] border border-orange-900/30 text-xs font-bold tracking-tight text-white placeholder-zinc-700 focus:outline-none focus:border-orange-500 transition-all rounded-none font-mono"
               disabled={isConnecting || socket.current?.readyState !== WebSocket.OPEN}
             />
           </div>
@@ -325,16 +327,28 @@ export default function WebSocketChatBox({ peer }) {
             onClick={sendMessage}
             disabled={!input.trim() || isConnecting || socket.current?.readyState !== WebSocket.OPEN}
             style={{ clipPath: 'polygon(15% 0, 100% 0, 100% 75%, 85% 100%, 0 100%, 0 25%)' }}
-            className="px-8 py-4 bg-slate-900 text-white hover:bg-cyan-600 transition-all duration-300 disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2"
+            className="px-8 py-4 bg-orange-600 text-black hover:bg-orange-500 transition-all duration-300 disabled:bg-zinc-900 disabled:text-zinc-700 flex items-center gap-2"
           >
             {isConnecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-3.5 h-3.5" /><span className="text-[10px] font-black tracking-widest">TRANSMIT</span></>}
           </button>
         </div>
-        <div className="flex items-center justify-between mt-3 text-[8px] font-black tracking-[0.2em] text-slate-400 uppercase">
-          <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5 text-cyan-500" /> SECURE_TUNNEL: ENABLED</span>
+        <div className="flex items-center justify-between mt-3 text-[8px] font-black tracking-[0.2em] text-zinc-600 uppercase">
+          <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5 text-orange-600" /> SECURE_TUNNEL: ENABLED</span>
           <span>PACKETS: {messages.length}</span>
         </div>
       </footer>
+      
+      <style>{`
+        ::-webkit-scrollbar {
+          width: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #442200;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #ea580c;
+        }
+      `}</style>
     </div>
   );
 }

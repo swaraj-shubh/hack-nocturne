@@ -22,7 +22,8 @@ function App() {
   }, [fetchUser]);
 
   return (
-    <>
+    <div className="min-h-screen bg-[#0a0a0a]
+     ">
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -33,7 +34,7 @@ function App() {
         <Route path="/invite" element={<EnterInviteCode />} />
       </Routes>
       <ToastContainer />
-    </>
+    </div>
   );
 }
 

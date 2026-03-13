@@ -49,13 +49,13 @@ def login_complete(data: LoginCompleteBody, response: Response):
 
         # Set a secure, HTTP-only cookie for session management
         response.set_cookie(
-            key="access_token",
-            value=token,
-            httponly=True,
-            secure=True,  # IMPORTANT: Set to True in production with HTTPS
-            samesite="strict",
-            max_age=7 * 24 * 60 * 60,  # 7 days
-            path="/"
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=7 * 24 * 60 * 60,
+        path="/"
         )
 
         return {"success": True, "msg": "Login successful", "user": verified_user}

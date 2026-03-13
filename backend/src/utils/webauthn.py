@@ -44,7 +44,10 @@ def begin_webauthn_registration(username: str, email: str):
     users.insert_one({
         "username": username,
         "email": email,
-        
+        "user_id": user_id,
+        "challenge": options.challenge.hex(),
+        "challenge_ts": time.time(),
+        "verified": False,
     })
 
     return json.loads(options_to_json(options))

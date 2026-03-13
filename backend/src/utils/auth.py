@@ -1,22 +1,47 @@
 from fastapi import HTTPException, Request, WebSocket, BackgroundTasks
 from jose import jwt, JWTError
 import os
-import uuid
-from datetime import datetime, timedelta, timezone
-from src.models.auth import UserRegister  # Note: You will need to remove the 'password' field from this Pydantic model
-from src.db.main import users
-import re
-from src.config import Config
-import base64
-from src.utils.email import welcome_email
+def decode_token(token: str) -> dict:
+    """Decode a JWT token and return its payload."""
+    try:
+        payload = jwt.decode(
+            token,
+            Config.SECRET_KEY,
+            algorithms=[Config.ALGORITHM]
+        )
+        return payload
+    except JWTError:
+        raise credentials_exception
 
-# --- JWT Configuration and Exception Handling ---
+# --- Core User Functions (Passwordless) ---
+'
+class UserModel(BaseModel):
+    id: Optional[str]
+    username: str
+    invite_code: str
+    kyber_public_key: str
+    dilithium_public_key: str
+    created_at: datetime
+    is_active: bool
 
-credentials_exception = HTTPException(
-    status_code=401,
-    detail="Could not validate credentials",
-    headers={"WWW-Authenticate": "Bearer"},
-)
+class UserLogin(BaseModel):
+    username: str = Field(...)
+    password: str = Field(...)
+    
+class RegistrationBeginBody(BaseModel):
+    username: str
+    email: str
+
+class RegistrationCompleteBody(BaseModel):
+    username: str
+    registration_response: dict
+
+class LoginBeginBody(BaseModel):
+    username: str
+
+class LoginCompleteBody(BaseModel):
+    username: str
+    authentication_response: dict
 
 def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """Create a JWT token with the provided data."""
@@ -142,45 +167,3 @@ def register_user(data: UserRegister, background_tasks: BackgroundTasks):
         "msg": "User registered successfully",
         "invite_code": invite_code
     }
-
-
-# --- Current User Retrieval for Authenticated Routes ---
-
-def get_current_user(request: Request):
-    """
-    Dependency to get the current user from a JWT in a cookie for standard HTTP requests.
-    """
-    token = request.cookies.get("access_token")
-    if not token:
-        raise HTTPException(status_code=401, detail="Missing token")
-
-    try:
-        data = decode_token(token)
-        user = users.find_one({"username": data["sub"]})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        # Ensure password hash is not returned, even if present in old records
-        user.pop("password_hash", None)
-        user["id"] = str(user["_id"])
-        return user
-    except Exception:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-async def get_current_user_ws(websocket: WebSocket):
-    """
-    Dependency to get the current user from a JWT in a cookie for WebSocket connections.
-    """
-    token = websocket.cookies.get("access_token")
-    if not token:
-        return None
-    try:
-        data = decode_token(token)
-        user = users.find_one({"username": data["sub"]})
-        if not user:
-            return None
-        # Ensure password hash is not returned
-        user.pop("password_hash", None)
-        user["id"] = str(user["_id"])
-        return user
-    except Exception:
-        return None

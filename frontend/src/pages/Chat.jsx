@@ -3,7 +3,7 @@ import ChatSidebar from "../components/ChatSidebar";
 import WebSocketChatBox from "../components/WebSocketChatBox";
 import { useAuthStore } from "../context/useAuthStore";
 import { useChatStore } from "../context/useChatStore";
-import { Shield, Cpu, Lock, Sparkles } from "lucide-react";
+import { Shield, Cpu, Lock, Sparkles, Loader2 } from "lucide-react";
 
 export default function ChatPage() {
   const { user } = useAuthStore();
@@ -14,91 +14,115 @@ export default function ChatPage() {
     if (peer && !selectedUser) setSelectedUser(peer);
   }, [peer, selectedUser]);
 
-  // if (!user) {
-  //   return (
-  //     <div className="min-h-screen bg-black text-[#00ff99] flex items-center justify-center">
-  //       <div className="bg-[#001a0d]/70 border border-[#00ff99]/20 rounded-2xl p-8 backdrop-blur-md text-center shadow-[0_0_20px_#00ff9940]">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00ff99] mx-auto mb-4"></div>
-  //         <p className="font-mono text-[#00ffcc]">Initializing Secure Channel...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div className="min-h-screen bg-black text-[#00ff99] relative overflow-hidden font-mono">
-      {/* === Neon Grid Background === */}
+    /* ADJUSTED: Changed min-h to fixed h and matched the calc to your navbar height */
+    <div className="h-[calc(100vh-70px)] bg-slate-200 text-slate-900 relative overflow-hidden font-sans selection:bg-cyan-100 selection:text-cyan-900">
+      {/* === Light Tech Background === */}
       <div className="absolute inset-0 z-0">
-        <div className="w-full h-full bg-[radial-gradient(circle_at_center,_rgba(0,255,100,0.05)_0%,_black_80%)]"></div>
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(90deg,rgba(0,255,100,0.2)_1px,transparent_1px),linear-gradient(rgba(0,255,100,0.2)_1px,transparent_1px)] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(0,209,255,0.08)_0%,_transparent_50%)]" />
+        <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(90deg,rgba(0,149,255,0.2)_1px,transparent_1px),linear-gradient(rgba(0,149,255,0.2)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        
+        {/* Floating Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-200/20 rounded-full blur-[100px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }} />
       </div>
 
-      {/* === Scanning Line Animation === */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="w-full h-1 bg-[#00ff99]/20 animate-[scan_4s_linear_infinite]"></div>
+      <style>{`
+        @keyframes scanline {
+          0% { transform: translateY(-100%); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: translateY(1000%); opacity: 0; }
+        }
+        .animate-scanline { animation: scanline 8s linear infinite; }
+        .cyber-glass {
+          background: rgba(255, 255, 255, 0.4);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+        .animate-float { animation: float 4s ease-in-out infinite; }
+        @keyframes float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 10px; }
+      `}</style>
+
+      {/* === Moving Scanline === */}
+      <div className="absolute inset-0 pointer-events-none z-10 opacity-20">
+        <div className="w-full h-[2px] bg-cyan-400/30 animate-scanline"></div>
       </div>
 
       {/* === Layout === */}
-      <div className="relative z-10 flex h-screen">
-        {/* Sidebar */}
-        <div className="w-72 bg-[#001a0d]/60 border-r border-[#00ff99]/20 backdrop-blur-md shadow-[0_0_25px_#00ff9940]">
+      {/* ADJUSTED: Changed h-screen to h-full so it respects the calc parent height */}
+      <div className="relative z-20 flex h-full overflow-hidden">
+        {/* Sidebar Panel */}
+        {/* ADJUSTED: Added h-full to ensure internal scroll works correctly */}
+        <div className="w-80 cyber-glass border-r border-slate-300 shadow-xl overflow-y-auto h-full">
           <ChatSidebar onSelectUser={setSelectedUser} selectedUser={selectedUser} />
         </div>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 ml-7 flex flex-col">
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col relative h-full">
           {selectedUser ? (
-            <div className="flex p-2 m-4 bg-[#001a0d]/60 border border-[#00ff99]/20 rounded-xl backdrop-blur-md shadow-[0_0_30px_#00ff9940]">
-              <WebSocketChatBox peer={selectedUser} />
+            /* ADJUSTED: Added h-full and overflow-hidden to contain the WebSocketChatBox */
+            <div className="flex-1 flex flex-col p-4 h-full overflow-hidden">
+              <div className="flex-1 cyber-glass border border-white/80 rounded-none shadow-2xl relative overflow-hidden h-full">
+                {/* Visual accent for active chat */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500" />
+                <WebSocketChatBox peer={selectedUser} />
+              </div>
             </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="max-w-lg text-center">
-                {/* Floating Icons */}
-                <div className="relative mb-10 flex justify-center">
-                  <Shield className="w-16 h-16 text-[#00ff99]/30 absolute animate-pulse" />
-                  <Lock className="w-8 h-8 text-[#00ff99]/60 absolute -top-4 left-[30%] animate-float" />
-                  <Cpu className="w-8 h-8 text-[#00ff99]/60 absolute bottom-0 right-[30%] animate-float-delayed" />
-                  <Sparkles className="w-6 h-6 text-[#00ffcc]/60 absolute top-2 right-1/2 animate-float-delayed-2" />
+            <div className="flex-1 flex items-center justify-center p-8 h-full">
+              <div className="max-w-md w-full text-center">
+                {/* Tech Visuals */}
+                <div className="relative mb-12 flex justify-center">
+                  <Shield className="w-20 h-20 text-cyan-500/10 absolute animate-pulse scale-125" />
+                  <div className="relative p-6 bg-white border border-slate-200 rotate-45 shadow-lg">
+                     <Lock className="w-8 h-8 text-cyan-600 -rotate-45" />
+                  </div>
+                  <Cpu className="w-6 h-6 text-slate-400 absolute -bottom-6 right-1/4 animate-float" />
+                  <Sparkles className="w-5 h-5 text-purple-400 absolute -top-4 left-1/4 animate-float" style={{animationDelay: '1s'}} />
                 </div>
 
-                {/* Message Card */}
-                <div className="bg-[#001a0d]/70 border border-[#00ff99]/20 rounded-2xl p-8 backdrop-blur-md shadow-[0_0_25px_#00ff9940] relative overflow-hidden">
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-[#00ff99]/10 to-transparent animate-border-glow"></div>
-
-                  <h2 className="text-3xl font-bold text-[#00ffcc] mb-4 drop-shadow-[0_0_15px_#00ff99]">
-                    SECURE OPS TERMINAL
+                {/* Information Card */}
+                <div className="cyber-glass p-8 border-t-4 border-cyan-500 shadow-xl">
+                  <h2 className="text-xl font-black tracking-[0.2em] text-slate-900 mb-4 uppercase">
+                    OPS_TERMINAL <span className="text-cyan-600">READY</span>
                   </h2>
-                  <p className="text-[#00ff99cc] text-sm mb-6 leading-relaxed">
-                    No contact selected. Choose an agent from the sidebar to initiate a classified channel.
+                  <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-8 leading-relaxed">
+                    Awaiting peer selection. Initialize a secure PQC-encrypted channel from your contacts.
                   </p>
 
                   <div className="space-y-3">
                     {[
-                      "Post-Quantum Encryption Active",
-                      "End-to-End Channel Verification",
-                      "AI Threat Detection: ON",
+                      { label: "Lattice Encryption Active", icon: "💎" },
+                      { label: "Peer-to-Peer Verification", icon: "🤝" },
+                      { label: "Zero-Knowledge Logs", icon: "👻" },
                     ].map((item, i) => (
                       <div
                         key={i}
-                        className="flex items-center justify-center text-sm bg-[#002a15]/80 border border-[#00ff99]/10 rounded-lg py-2 hover:border-[#00ff99]/30 transition"
+                        className="flex items-center gap-4 text-[10px] font-black tracking-widest bg-white/60 border border-slate-100 rounded-none py-3 px-4 uppercase text-slate-600"
                       >
-                        <div className="w-2 h-2 bg-[#00ff99] rounded-full mr-3 animate-pulse"></div>
-                        <span className="text-[#00ffcc]">{item}</span>
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* System Status */}
-                <div className="mt-8 flex justify-center gap-6 text-xs text-[#00ff99bb]">
+                {/* Status Bar */}
+                <div className="mt-10 flex justify-center gap-8 text-[10px] font-black tracking-widest text-slate-400">
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#00ff99] rounded-full animate-pulse"></div>
-                    SYSTEM ONLINE
+                    <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                    CORE_ONLINE
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-[#00ffcc] rounded-full animate-pulse delay-200"></div>
-                    ENCRYPTION ACTIVE
+                    <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse delay-75"></span>
+                    SECURE_LINK_READY
                   </div>
                 </div>
               </div>
@@ -107,41 +131,12 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* === Animations === */}
-      <style>{`
-        @keyframes scan {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(100%); }
-        }
-
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
-        }
-
-        @keyframes float-delayed {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
-
-        @keyframes float-delayed-2 {
-          0%, 100% { transform: translateY(0) translateX(0); }
-          50% { transform: translateY(-4px) translateX(4px); }
-        }
-
-        @keyframes border-glow {
-          0%, 100% { opacity: 0.2; }
-          50% { opacity: 0.8; }
-        }
-
-        .animate-float { animation: float 4s ease-in-out infinite; }
-        .animate-float-delayed { animation: float-delayed 4s ease-in-out infinite 2s; }
-        .animate-float-delayed-2 { animation: float-delayed-2 5s ease-in-out infinite 1s; }
-        .animate-border-glow { animation: border-glow 3s ease-in-out infinite; }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #00ff99; border-radius: 4px; }
-      `}</style>
+      {/* Mini System Footer */}
+      <div className="fixed bottom-0 right-0 p-4 z-30 pointer-events-none">
+        <div className="text-[10px] font-mono text-slate-400 bg-white/50 backdrop-blur-sm px-3 py-1 border border-slate-200 uppercase tracking-tighter">
+          Session Token: <span className="text-cyan-600 font-bold">Valid_Auth</span>
+        </div>
+      </div>
     </div>
   );
 }

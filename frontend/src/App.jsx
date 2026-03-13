@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Chat from './pages/Chat';
 import EnterInviteCode from './components/EnterInviteCode';
+// import Navbar from '../../../navbar';
 import Navbar from './components/navbar';
 import { ToastContainer } from 'react-toastify';
 import { useAuthStore } from './context/useAuthStore';

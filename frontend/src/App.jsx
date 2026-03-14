@@ -5,6 +5,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Chat from './pages/Chat';
 import EnterInviteCode from './components/EnterInviteCode';
+// import Navbar from '../../../navbar';
 import Navbar from './components/navbar';
 import { ToastContainer } from 'react-toastify';
 import { useAuthStore } from './context/useAuthStore';
@@ -22,7 +23,8 @@ function App() {
   }, [fetchUser]);
 
   return (
-    <>
+    <div className="min-h-screen bg-[#0a0a0a]
+     ">
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -33,7 +35,7 @@ function App() {
         <Route path="/invite" element={<EnterInviteCode />} />
       </Routes>
       <ToastContainer />
-    </>
+    </div>
   );
 }
 

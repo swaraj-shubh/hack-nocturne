@@ -515,9 +515,9 @@ export default function WebSocketChatBox({ peer }) {
   // ── Render ─────────────────────────────────────────────────────────────────
   if (!user || !peer || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] bg-white/40 backdrop-blur-md border border-slate-200">
-        <Loader2 className="animate-spin h-8 w-8 text-cyan-500 mb-4" />
-        <p className="text-[10px] font-black tracking-[0.3em] text-slate-500 uppercase">SYNCING_DEVICES...</p>
+      <div className="flex flex-col items-center justify-center h-[500px] bg-[#0a0a0a]/80 backdrop-blur-xl border border-orange-900/30">
+        <Loader2 className="animate-spin h-8 w-8 text-orange-600 mb-4" />
+        <p className="text-[10px] font-black tracking-[0.3em] text-zinc-500 uppercase">SYNCING_DEVICES...</p>
       </div>
     );
   }
@@ -538,13 +538,13 @@ export default function WebSocketChatBox({ peer }) {
             <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${isUserOnline ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-300"}`} />
           </div>
           <div>
-            <h2 className="text-sm font-black tracking-tight text-slate-900 uppercase">{peer.username}</h2>
-            <div className="text-[9px] font-bold text-cyan-600 tracking-widest uppercase">NODE_LINK: STABLE</div>
+            <h2 className="text-sm font-black tracking-tight text-white uppercase italic">{peer.username}</h2>
+            <div className="text-[9px] font-bold text-orange-500 tracking-widest uppercase">NODE_LINK: STABLE</div>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{status}</div>
-          <div className="flex items-center gap-1 justify-end mt-0.5 text-[9px] text-cyan-500 font-black tracking-widest">
+          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">{status}</div>
+          <div className="flex items-center gap-1 justify-end mt-0.5 text-[9px] text-orange-500 font-black tracking-widest uppercase italic">
             <Shield className="w-3 h-3" /> PQC_ACTIVE
           </div>
         </div>
@@ -553,10 +553,10 @@ export default function WebSocketChatBox({ peer }) {
       <main className="flex-1 p-6 overflow-y-auto z-10 space-y-4">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-30">
-            <div className="p-5 border border-slate-200 rounded-none rotate-45 mb-6">
-              <Lock className="w-6 h-6 text-slate-400 -rotate-45" />
+            <div className="p-5 border border-orange-900/30 rounded-none rotate-45 mb-6">
+              <Lock className="w-6 h-6 text-orange-900 -rotate-45" />
             </div>
-            <p className="text-[10px] font-black tracking-[0.4em] text-slate-500 uppercase">Initialize_Secure_Comms</p>
+            <p className="text-[10px] font-black tracking-[0.4em] text-zinc-600 uppercase">Initialize_Secure_Comms</p>
           </div>
         ) : (
           messages.map((msg, idx) => (
@@ -681,11 +681,23 @@ export default function WebSocketChatBox({ peer }) {
                 : <><Send className="w-3.5 h-3.5" /><span className="text-[10px] font-black tracking-widest">TRANSMIT</span></>}
           </button>
         </div>
-        <div className="flex items-center justify-between mt-3 text-[8px] font-black tracking-[0.2em] text-slate-400 uppercase">
-          <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5 text-cyan-500" /> SECURE_TUNNEL: ENABLED</span>
+        <div className="flex items-center justify-between mt-3 text-[8px] font-black tracking-[0.2em] text-zinc-600 uppercase">
+          <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5 text-orange-600" /> SECURE_TUNNEL: ENABLED</span>
           <span>PACKETS: {messages.length}</span>
         </div>
       </footer>
+      
+      <style>{`
+        ::-webkit-scrollbar {
+          width: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #442200;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #ea580c;
+        }
+      `}</style>
     </div>
   );
 }

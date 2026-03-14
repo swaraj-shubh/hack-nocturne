@@ -98,7 +98,7 @@ export default function Phase5KeyDecapsulation({
           <span className="text-[11px] font-semibold uppercase tracking-widest text-amber-600">Phase 5</span>
           <div className="h-px w-8 bg-amber-300" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Key Decapsulation</h2>
+        <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Kyber Decapsulation</h2>
         <p className="text-sm text-gray-500 mt-2 max-w-lg mx-auto">
           Recover the shared secret using Kyber ciphertext and the recipient's private key
         </p>

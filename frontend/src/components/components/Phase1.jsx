@@ -286,13 +286,23 @@ export default function Phase1KeyExchange({
           ]}
         />
       </div>
-
-      {/* Status Panel */}
+{/* Encapsulation Section Heading */}
+      <div className="mt-10 mb-1 text-center flex flex-col items-center">
+        <div className="inline-flex items-center gap-2">
+          <LockClosedIcon />
+          <h3 className="text-3xl font-bold text-gray-800 tracking-tight">
+            Kyber Encapsulation
+          </h3>
+        </div>
+        <p className="text-sm text-gray-500 mt-1.5 px-3 py-1 bg-gray-50 rounded-md border border-gray-100">
+          Performs encapsulation using the receiver's Kyber public key
+        </p>
+      </div>      {/* Status Panel */}
       <div className="mt-5 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         {/* Panel header */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-100">
           <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-            Exchange Status
+            Generates:-
           </span>
           <span className="text-[10px] text-gray-400">Step 1 / 2</span>
         </div>

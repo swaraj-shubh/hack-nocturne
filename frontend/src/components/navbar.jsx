@@ -154,7 +154,7 @@ export default function Navbar() {
                       <div className="text-[10px] font-black text-white leading-none mb-1 uppercase tracking-tighter">
                         {user.username}
                       </div>
-                      <div className="text-[9px] text-orange-500 font-bold tracking-widest uppercase">
+                      <div className="text-[9px] text-orange-500 font-bold tracking-widest">
                         ID: {user.invite_code || '---'}
                       </div>
                     </div>

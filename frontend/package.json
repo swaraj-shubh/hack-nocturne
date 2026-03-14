@@ -28,6 +28,7 @@
     "@tailwindcss/vite": "^4.1.8",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "crystals-kyber": "^5.1.0",
     "framer-motion": "^12.23.24",

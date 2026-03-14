@@ -9,19 +9,13 @@
 
 | | |
 |---|---|
-| ![Demo 1]([pic1](https://github.com/user-attachments/assets/09795181-5ae5-4b52-b9b2-4d25e1ffa017)) | ![Demo 2](pic2) |
-| *Home / Landing Page* | *Secure Chat Interface* |
+| ![Home Page](https://github.com/user-attachments/assets/09795181-5ae5-4b52-b9b2-4d25e1ffa017) | ![PQC Playground](https://github.com/user-attachments/assets/04c580d7-11ef-43b7-9cf3-ead7c1bf2787) |
+| *Home / Landing Page* | *PQC Playground — Key Exchange Phase* |
 
-| | |
-|---|---|
-| ![Demo 3]([pic3](https://github.com/user-attachments/assets/04c580d7-11ef-43b7-9cf3-ead7c1bf2787)) | ![Demo 4](pic4) |
-| *PQC Playground — Key Exchange Phase* | *Registration Flow (WebAuthn + PQC Keys)* |
-
-| | |
-|---|---|
-| ![Demo 5]([pic5](https://github.com/user-attachments/assets/f79b8fb3-83b5-4ca6-87f8-0c151ba5429e)) | ![Demo 6](pic6) |
-| *Secure Chat Interface* | *File Transfer — Encrypted* |
-
+| |
+|---|
+| ![Secure Chat](https://github.com/user-attachments/assets/f79b8fb3-83b5-4ca6-87f8-0c151ba5429e) |
+| *Secure Chat Interface* |
 ---
 
 ## 📑 Table of Contents

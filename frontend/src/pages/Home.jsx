@@ -67,13 +67,13 @@ export default function Home() {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center mb-20">
           <Link to="/login">
-            <Button className="h-14 px-12 bg-orange-600 text-black hover:bg-orange-500 transition-all duration-300 cyber-button-clip rounded-none font-black tracking-widest text-sm shadow-[0_0_20px_rgba(255,102,0,0.3)]">
+            <Button className="h-14 px-12 bg-orange-600 cursor-pointer text-black hover:bg-orange-500 transition-all duration-300 cyber-button-clip rounded-none font-black tracking-widest text-sm shadow-[0_0_20px_rgba(255,102,0,0.3)]">
               INITIALIZE TERMINAL
             </Button>
           </Link>
-          <Link to="#docs">
-            <Button variant="outline" className="h-14 px-12 border-orange-500/40 bg-transparent backdrop-blur-md text-orange-500 hover:bg-orange-500/10 hover:border-orange-400 transition-all duration-300 cyber-button-clip rounded-none font-black tracking-widest text-sm">
-              VIEW_PROTOCOLS
+          <Link to="/playground">
+            <Button variant="outline" className="h-14 px-12 cursor-pointer border-orange-500/40 hover:text-orange-400 bg-transparent backdrop-blur-md text-orange-500 hover:bg-orange-500/10 hover:border-orange-400 transition-all duration-300 cyber-button-clip rounded-none font-black tracking-widest text-sm">
+              VIEW_PLAYGROUND
             </Button>
           </Link>
         </div>
@@ -83,10 +83,6 @@ export default function Home() {
           {[
             { title: "LATTICE_CORE", desc: "Hardened key-exchange modules resistant to brute-force decryption.", icon: "🔐" },
             { title: "KINETIC_MONITOR", desc: "Real-time threat mitigation and adaptive signal scrambling.", icon: "🧠" },
-            { title: "DARK_MESH", desc: "Non-attributable routing layers across rotating session IDs.", icon: "📡" },
-            { title: "DARK_MESH", desc: "Non-attributable routing layers across rotating session IDs.", icon: "📡" },
-            { title: "DARK_MESH", desc: "Non-attributable routing layers across rotating session IDs.", icon: "📡" },
-            { title: "DARK_MESH", desc: "Non-attributable routing layers across rotating session IDs.", icon: "📡" },
             { title: "DARK_MESH", desc: "Non-attributable routing layers across rotating session IDs.", icon: "📡" },
           ].map((f, i) => (
             <Card key={f.title} className="cyber-glass group transition-all duration-500 hover:-translate-y-2 border-none">

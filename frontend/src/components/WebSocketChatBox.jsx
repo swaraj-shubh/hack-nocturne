@@ -11,7 +11,7 @@ import {
 import { chatStorage } from "../utils/chatStorage";
 import {
   Shield, Send, Loader2, CheckCircle, AlertCircle, Lock,
-  Paperclip, X, Image, FileText, Download,
+  Paperclip, X, Image, FileText, Download, Zap,
 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -22,16 +22,6 @@ function getFileType(mimeType) {
   return "file";
 }
 
-function uint8ArrayToBase64Safe(bytes) {
-  const chunkSize = 8192;
-  let binary = "";
-  for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-  }
-  return btoa(binary);
-}
-
-// Programmatic download
 function triggerDownload(objectUrl, fileName) {
   const a = document.createElement("a");
   a.href = objectUrl;
@@ -40,6 +30,27 @@ function triggerDownload(objectUrl, fileName) {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => document.body.removeChild(a), 200);
+}
+
+// ─── Shared message metadata row ──────────────────────────────────────────────
+function MsgMeta({ msg }) {
+  return (
+    <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-white/5">
+      <span className="text-[7px] font-mono text-zinc-700 uppercase tracking-wider">
+        {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+      </span>
+      {msg.sender === "them" && msg.signatureVerified !== null && (
+        <div className={`flex items-center gap-1 text-[7px] font-black tracking-widest uppercase ${
+          msg.signatureVerified ? "text-orange-600/80" : "text-red-500/80"
+        }`}>
+          {msg.signatureVerified
+            ? <CheckCircle className="w-2.5 h-2.5" />
+            : <AlertCircle className="w-2.5 h-2.5" />}
+          {msg.signatureVerified ? "SIG_OK" : "TAMPERED"}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -51,7 +62,7 @@ export default function WebSocketChatBox({ peer }) {
 
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
-  const [status, setStatus] = useState("🔄 Initializing secure channel...");
+  const [status, setStatus] = useState("INITIALIZING...");
   const [isConnecting, setIsConnecting] = useState(false);
   const [dbInitialized, setDbInitialized] = useState(false);
   const [isUserOnline, setIsUserOnline] = useState(true);
@@ -70,7 +81,7 @@ export default function WebSocketChatBox({ peer }) {
   useEffect(() => {
     const initDB = async () => {
       try { await chatStorage.init(); setDbInitialized(true); }
-      catch (error) { console.error("[CHAT] ❌ Failed to initialize IndexedDB:", error); }
+      catch (error) { console.error("[CHAT] Failed to initialize IndexedDB:", error); }
     };
     initDB();
   }, []);
@@ -84,7 +95,6 @@ export default function WebSocketChatBox({ peer }) {
         if (keys?.privateKey && keys?.dilithiumPrivateKey) {
           setKyberPrivateKey(keys.privateKey);
           setDilithiumPrivateKey(keys.dilithiumPrivateKey);
-          console.log("[CHAT] Keys loaded from IndexedDB");
           return;
         }
         const kyberPrivateKeyBase64 = localStorage.getItem("kyberPrivate");
@@ -92,7 +102,6 @@ export default function WebSocketChatBox({ peer }) {
         if (kyberPrivateKeyBase64 && dilithiumPrivateKeyBase64) {
           setKyberPrivateKey(kyberPrivateKeyBase64);
           setDilithiumPrivateKey(dilithiumPrivateKeyBase64);
-          console.log("[CHAT] Keys loaded from localStorage");
           const kyberPublicKey = localStorage.getItem("kyberPublic");
           const dilithiumPublicKey = localStorage.getItem("dilithiumPublic");
           if (kyberPublicKey && dilithiumPublicKey) {
@@ -102,7 +111,7 @@ export default function WebSocketChatBox({ peer }) {
             });
           }
         }
-      } catch (error) { console.error("[CHAT] ❌ Error loading keys:", error); }
+      } catch (error) { console.error("[CHAT] Error loading keys:", error); }
     };
     loadKeys();
   }, [dbInitialized, user]);
@@ -137,17 +146,13 @@ export default function WebSocketChatBox({ peer }) {
     if (!user || !peerId || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) return;
 
     const loadMessages = async () => {
-      console.log("[CHAT] loadMessages — chatId:", chatId);
       try {
         let peerDilithiumPublicKey = null;
         try {
           const pk = await fetchPeerPublicKeys(peerId);
           peerDilithiumPublicKey = pk.dilithiumPublicKey;
-        } catch {
-          console.warn("[CHAT] ⚠️ Could not fetch peer keys");
-        }
+        } catch { console.warn("[CHAT] Could not fetch peer keys"); }
 
-        // ── 1. Local IndexedDB ───────────────────────────────────────────────
         const localMessages = await chatStorage.getMessages(chatId);
         const processedLocal = await Promise.all(
           localMessages
@@ -187,24 +192,21 @@ export default function WebSocketChatBox({ peer }) {
                   });
                 }
                 return { sender: "them", type: "text", text: decryptedText, timestamp: msg.timestamp, messageId: msg.id, signatureVerified };
-              } catch (e) {
-                return { sender: "them", type: "text", text: "[Failed to decrypt]", timestamp: msg.timestamp, messageId: msg.id, signatureVerified: false };
+              } catch {
+                return { sender: "them", type: "text", text: "[DECRYPT_FAILED]", timestamp: msg.timestamp, messageId: msg.id, signatureVerified: false };
               }
             })
         );
         processedLocal.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setMessages(processedLocal);
 
-        // ── 2. Server messages ───────────────────────────────────────────────
         const res = await fetch(`https://localhost:8000/api/v1/messages/${peerId}`, { credentials: "include" });
-        if (!res.ok) { console.warn("[CHAT] Server fetch failed:", res.status); return; }
+        if (!res.ok) return;
         const serverData = await res.json();
-        console.log("[CHAT] Server messages:", serverData.length);
 
         const serverMessages = [];
         for (const msg of serverData) {
           const isMyMessage = msg.sender_id === user._id;
-          console.log(`[CHAT] Server msg — type: "${msg.message_type}", mine: ${isMyMessage}`);
 
           if (msg.message_type === "encrypted" && msg.ciphertext && msg.encrypted_message && msg.iv) {
             if (isMyMessage) continue;
@@ -230,11 +232,10 @@ export default function WebSocketChatBox({ peer }) {
                 encryptedMessage: msg.encrypted_message, iv: msg.iv,
                 signature: msg.signature, signatureVerified,
               }, msg.timestamp, msg.sender_id, msg.receiver_id);
-            } catch (e) { messageText = "[Failed to decrypt]"; }
+            } catch { messageText = "[DECRYPT_FAILED]"; }
             serverMessages.push({ sender: "them", type: "text", text: messageText, timestamp: msg.timestamp, serverId: msg._id, signatureVerified });
 
           } else if (msg.message_type === "encrypted-file" && msg.fileKyberCiphertext && msg.encryptedFileData) {
-            // Files stored directly as base64 on the server — decrypt inline
             if (isMyMessage) continue;
             try {
               const { fileBytes, signatureValid } = await decryptFile({
@@ -246,22 +247,19 @@ export default function WebSocketChatBox({ peer }) {
                 dilithiumPublicKeyBase64: peerDilithiumPublicKey,
               });
               const blob = new Blob([fileBytes], { type: msg.fileMime || "application/octet-stream" });
-              const localUrl = URL.createObjectURL(blob);
               serverMessages.push({
                 sender: "them", type: "file",
-                fileUrl: localUrl, fileBytes,
+                fileUrl: URL.createObjectURL(blob), fileBytes,
                 fileName: msg.fileName, fileMime: msg.fileMime,
                 timestamp: msg.timestamp, signatureVerified: signatureValid,
               });
-            } catch (e) {
-              console.error("[CHAT] ❌ Failed to decrypt server file:", e.message);
+            } catch {
               serverMessages.push({
                 sender: "them", type: "file", fileUrl: null, fileBytes: null,
                 fileName: msg.fileName || "Unknown file", fileMime: msg.fileMime,
                 timestamp: msg.timestamp, signatureVerified: false,
               });
             }
-
           } else if (msg.message) {
             serverMessages.push({
               sender: isMyMessage ? "me" : "them", type: "text",
@@ -270,7 +268,6 @@ export default function WebSocketChatBox({ peer }) {
           }
         }
 
-        // ── 3. Merge + deduplicate + sort ────────────────────────────────────
         const allMessages = [...processedLocal];
         for (const serverMsg of serverMessages) {
           const isDup = allMessages.some(m => {
@@ -283,14 +280,10 @@ export default function WebSocketChatBox({ peer }) {
         }
         allMessages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         setMessages(allMessages);
-        console.log(`[CHAT] Final: ${allMessages.length} (text: ${allMessages.filter(m => m.type === "text").length}, files: ${allMessages.filter(m => m.type === "file").length})`);
-
-      } catch (e) {
-        console.error("[CHAT] ❌ loadMessages failed:", e);
-        setStatus("❌ Failed to load messages");
+      } catch {
+        setStatus("LOAD_ERR");
       }
     };
-
     loadMessages();
   }, [peerId, user, kyberPrivateKey, dilithiumPrivateKey, dbInitialized, chatId, fetchPeerPublicKeys]);
 
@@ -302,15 +295,12 @@ export default function WebSocketChatBox({ peer }) {
     const connectWebSocket = () => {
       if (socket.current?.readyState === WebSocket.OPEN || isConnecting) return;
       setIsConnecting(true);
+      setStatus("HANDSHAKING...");
       const ws = new WebSocket("wss://localhost:8000/api/v1/ws/chat");
       socket.current = ws;
 
       ws.onopen = () => {
-        if (isMounted) {
-          setStatus("✅ Secure channel established");
-          setIsConnecting(false);
-          reconnectAttempts.current = 0;
-        }
+        if (isMounted) { setStatus("CHANNEL_OPEN"); setIsConnecting(false); reconnectAttempts.current = 0; }
       };
 
       ws.onmessage = async (e) => {
@@ -318,25 +308,23 @@ export default function WebSocketChatBox({ peer }) {
         try {
           const rawData = e.data;
           if (typeof rawData === "string" && rawData.startsWith("STATUS:")) {
-            setStatus(rawData.replace("STATUS:", ""));
+            const s = rawData.replace("STATUS:", "").trim();
+            if (s.includes("Connected") || s.includes("delivered")) setStatus("CHANNEL_OPEN");
+            else if (s.includes("❌")) setStatus("TX_FAIL");
+            else setStatus(s.toUpperCase().replace(/\s+/g, "_").slice(0, 20));
             return;
           }
           const data = JSON.parse(rawData);
-
           if (data.type === "ping") {
-            socket.current?.readyState === WebSocket.OPEN &&
-              socket.current.send(JSON.stringify({ type: "pong" }));
+            socket.current?.readyState === WebSocket.OPEN && socket.current.send(JSON.stringify({ type: "pong" }));
             return;
           }
           if (data.type === "pong") return;
 
-          console.log("[CHAT] WS message — type:", data.type);
-
           if (data.type === "encrypted-message") {
             let decryptedText; let signatureVerified = null;
             let peerDilithiumPublicKey = null;
-            try { const pk = await fetchPeerPublicKeys(data.from); peerDilithiumPublicKey = pk.dilithiumPublicKey; }
-            catch (keyErr) { console.warn("[CHAT] Could not fetch peer keys:", keyErr.message); }
+            try { const pk = await fetchPeerPublicKeys(data.from); peerDilithiumPublicKey = pk.dilithiumPublicKey; } catch { }
 
             if (data.signature && peerDilithiumPublicKey) {
               try {
@@ -367,12 +355,8 @@ export default function WebSocketChatBox({ peer }) {
             setMessages(prev => [...prev, newMsg]);
 
           } else if (data.type === "encrypted-file") {
-            // File arrives as base64 directly in the WS payload — no CDN fetch needed
-            console.log("[CHAT] Live file incoming:", data.fileName);
             let peerDilithiumPublicKey = null;
-            try { const pk = await fetchPeerPublicKeys(data.from); peerDilithiumPublicKey = pk.dilithiumPublicKey; }
-            catch (keyErr) { console.warn("[CHAT] Could not fetch peer keys:", keyErr.message); }
-
+            try { const pk = await fetchPeerPublicKeys(data.from); peerDilithiumPublicKey = pk.dilithiumPublicKey; } catch { }
             try {
               const { fileBytes, signatureValid } = await decryptFile({
                 kyberPrivateKeyBase64: kyberPrivateKey,
@@ -383,28 +367,20 @@ export default function WebSocketChatBox({ peer }) {
                 dilithiumPublicKeyBase64: peerDilithiumPublicKey,
               });
               const blob = new Blob([fileBytes], { type: data.fileMime || "application/octet-stream" });
-              const localUrl = URL.createObjectURL(blob);
               setMessages(prev => [...prev, {
-                sender: "them", type: "file", fileUrl: localUrl, fileBytes,
+                sender: "them", type: "file", fileUrl: URL.createObjectURL(blob), fileBytes,
                 fileName: data.fileName, fileMime: data.fileMime,
                 timestamp: new Date().toISOString(), signatureVerified: signatureValid,
               }]);
-              console.log("[CHAT] Live file decrypted OK:", data.fileName);
-            } catch (e) {
-              console.error("[CHAT] ❌ Failed to decrypt live file:", e.message);
+            } catch {
               setMessages(prev => [...prev, {
                 sender: "them", type: "file", fileUrl: null, fileBytes: null,
                 fileName: data.fileName || "Unknown file", fileMime: data.fileMime,
                 timestamp: new Date().toISOString(), signatureVerified: false,
               }]);
             }
-
-          } else {
-            console.warn("[CHAT] Unknown WS message type:", data.type);
           }
-        } catch (error) {
-          console.error("[CHAT] ❌ WS message processing failed:", error);
-        }
+        } catch { }
       };
 
       ws.onclose = (event) => {
@@ -412,12 +388,12 @@ export default function WebSocketChatBox({ peer }) {
         setIsConnecting(false);
         if (event.code !== 1000) {
           const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 10000);
-          setStatus(`🔄 Re-establishing in ${delay / 1000}s...`);
+          setStatus(`RETRY_${delay / 1000}S`);
           reconnectTimeoutRef.current = setTimeout(() => { reconnectAttempts.current++; connectWebSocket(); }, delay);
         }
       };
 
-      ws.onerror = (e) => console.error("[CHAT] WS error:", e);
+      ws.onerror = () => setStatus("WS_ERROR");
     };
 
     connectWebSocket();
@@ -447,7 +423,7 @@ export default function WebSocketChatBox({ peer }) {
       await chatStorage.storeMyMessage(chatId, input, newMsg.timestamp, user._id, peerId);
       setMessages(prev => [...prev, newMsg]);
       setInput("");
-    } catch (err) { console.error("[CHAT] ❌ sendMessage:", err); setStatus("❌ Security failure"); }
+    } catch { setStatus("TX_FAIL"); }
   };
 
   // ── File select ────────────────────────────────────────────────────────────
@@ -459,173 +435,192 @@ export default function WebSocketChatBox({ peer }) {
     e.target.value = "";
   };
 
-  // ── Send file — encrypted bytes sent directly over WebSocket as base64 ────
+  // ── Send file ──────────────────────────────────────────────────────────────
   const sendFile = async () => {
     if (!selectedFile || !socket.current || socket.current.readyState !== WebSocket.OPEN) return;
     setIsUploadingFile(true);
-    setStatus("🔐 Encrypting file...");
+    setStatus("ENCRYPTING...");
     const localPreviewUrl = selectedFile.previewUrl;
     const fileName = selectedFile.file.name;
     const fileMime = selectedFile.file.type;
     try {
       const peerKeys = await fetchPeerPublicKeys(peerId);
       const arrayBuffer = await selectedFile.file.arrayBuffer();
-
-      // Encrypt the raw file bytes
       const { kyberCiphertext: fileKyberCiphertext, encryptedFile, iv: fileIv, fileSignature } =
         await encryptFile(peerKeys.kyberPublicKey, arrayBuffer, dilithiumPrivateKey);
 
-      // Send encrypted bytes directly — no CDN, no upload step
-      setStatus("📡 Transmitting encrypted file...");
+      setStatus("TRANSMITTING...");
       socket.current.send(JSON.stringify({
         type: "encrypted-file",
-        fileKyberCiphertext,
-        encryptedFileData: encryptedFile,   // base64 encrypted bytes
-        fileIv,
-        fileSignature,
-        fileName,
-        fileMime,
-        to: peerId,
-        from: user._id,
+        fileKyberCiphertext, encryptedFileData: encryptedFile,
+        fileIv, fileSignature, fileName, fileMime,
+        to: peerId, from: user._id,
       }));
 
-      // Show the file immediately in our own chat window (unencrypted preview)
       const originalBytes = new Uint8Array(arrayBuffer);
       const localBlob = new Blob([originalBytes], { type: fileMime || "application/octet-stream" });
       const localUrl = fileMime?.startsWith("image/") ? URL.createObjectURL(localBlob) : localPreviewUrl;
 
       setMessages(prev => [...prev, {
-        sender: "me", type: "file",
-        fileUrl: localUrl,
-        fileBytes: originalBytes,
-        fileName, fileMime,
-        timestamp: new Date().toISOString(),
-        signatureVerified: true,
+        sender: "me", type: "file", fileUrl: localUrl, fileBytes: originalBytes,
+        fileName, fileMime, timestamp: new Date().toISOString(), signatureVerified: true,
       }]);
       setSelectedFile(null);
-      setStatus("✅ Secure channel established");
-    } catch (error) {
-      console.error("[CHAT] ❌ sendFile:", error);
-      setStatus(`❌ File transfer failed: ${error.message}`);
+      setStatus("CHANNEL_OPEN");
+    } catch {
+      setStatus("TX_FAIL");
       if (localPreviewUrl) URL.revokeObjectURL(localPreviewUrl);
       setSelectedFile(null);
     } finally { setIsUploadingFile(false); }
   };
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const isWsReady = socket.current?.readyState === WebSocket.OPEN;
+  const canSend = isWsReady && !isConnecting && !isUploadingFile;
+
+  // ── Loading gate ──────────────────────────────────────────────────────────
   if (!user || !peer || !kyberPrivateKey || !dilithiumPrivateKey || !dbInitialized) {
     return (
-      <div className="flex flex-col items-center justify-center h-[500px] bg-[#0a0a0a]/80 backdrop-blur-xl border border-orange-900/30">
-        <Loader2 className="animate-spin h-8 w-8 text-orange-600 mb-4" />
-        <p className="text-[10px] font-black tracking-[0.3em] text-zinc-500 uppercase">SYNCING_DEVICES...</p>
+      <div className="flex flex-col items-center justify-center h-full bg-[#0a0a0a]">
+        <Loader2 className="animate-spin h-7 w-7 text-orange-600 mb-4" />
+        <p className="text-[9px] font-black tracking-[0.4em] text-zinc-600 uppercase font-mono">SYNCING_DEVICES</p>
       </div>
     );
   }
 
+  // Status indicator colour
+  const dotClass = status === "CHANNEL_OPEN"
+    ? "bg-orange-500 shadow-[0_0_7px_#ea580c]"
+    : status.includes("FAIL") || status.includes("ERR")
+      ? "bg-red-500 shadow-[0_0_7px_#ef4444]"
+      : "bg-amber-400 shadow-[0_0_7px_#fbbf24] animate-pulse";
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full w-full bg-white/20 backdrop-blur-xl relative overflow-hidden flex-1">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-        <div className="w-full h-full bg-[linear-gradient(90deg,rgba(0,149,255,0.2)_1px,transparent_1px),linear-gradient(rgba(0,149,255,0.2)_1px,transparent_1px)] bg-[size:30px_30px]" />
+    <div className="flex flex-col h-full w-full bg-[#0a0a0a] relative overflow-hidden">
+
+      <style>{`
+        .msg-me  { clip-path: polygon(0 0, 100% 0, 100% 80%, 93% 100%, 0 100%); }
+        .msg-them{ clip-path: polygon(7% 0, 100% 0, 100% 100%, 0 100%, 0 20%); }
+        .chat-scroll::-webkit-scrollbar { width: 3px; }
+        .chat-scroll::-webkit-scrollbar-track { background: transparent; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #7c2d12; }
+        .chat-scroll::-webkit-scrollbar-thumb:hover { background: #ea580c; }
+      `}</style>
+
+      {/* Ambient grid overlay */}
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none">
+        <div className="w-full h-full bg-[linear-gradient(90deg,rgba(255,102,0,0.3)_1px,transparent_1px),linear-gradient(rgba(255,102,0,0.3)_1px,transparent_1px)] bg-[size:40px_40px]" />
       </div>
 
-      <header className="px-6 py-4 bg-white/60 backdrop-blur-md border-b border-slate-200/60 z-10 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <div style={{ clipPath: "polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)" }}
-              className="w-10 h-10 bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-lg">
+      {/* Top hairline glow */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-600/50 to-transparent z-10" />
+
+      {/* ── Header ────────────────────────────────────────────────────────── */}
+      <header className="relative flex items-center justify-between px-5 py-3 bg-[#0d0d0d] border-b border-orange-900/40 z-10 flex-shrink-0">
+        {/* Left accent bar */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-orange-600 via-orange-700/50 to-transparent" />
+
+        <div className="flex items-center gap-3 pl-2">
+          {/* Avatar */}
+          <div className="relative flex-shrink-0">
+            <div
+              className="w-9 h-9 bg-orange-950/70 border border-orange-800/50 text-orange-400 flex items-center justify-center font-black text-sm uppercase italic select-none"
+              style={{ clipPath: "polygon(10% 0, 100% 0, 100% 75%, 90% 100%, 0 100%, 0 25%)" }}
+            >
               {peer.username?.charAt(0).toUpperCase()}
             </div>
-            <div className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${isUserOnline ? "bg-emerald-500 shadow-[0_0_8px_#10b981]" : "bg-slate-300"}`} />
+            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-[#0d0d0d] ${isUserOnline ? "bg-orange-500 shadow-[0_0_6px_#ea580c]" : "bg-zinc-700"}`} />
           </div>
+
           <div>
-            <h2 className="text-sm font-black tracking-tight text-white uppercase italic">{peer.username}</h2>
-            <div className="text-[9px] font-bold text-orange-500 tracking-widest uppercase">NODE_LINK: STABLE</div>
+            <h2 className="text-[13px] font-black tracking-wider text-white uppercase italic leading-none">
+              {peer.username}
+            </h2>
+            <p className="text-[8px] font-bold tracking-[0.2em] uppercase mt-0.5 font-mono"
+               style={{ color: isUserOnline ? "#c2410c" : "#3f3f46" }}>
+              {isUserOnline ? "ONLINE · PEER_READY" : "OFFLINE · QUEUED_MODE"}
+            </p>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">{status}</div>
-          <div className="flex items-center gap-1 justify-end mt-0.5 text-[9px] text-orange-500 font-black tracking-widest uppercase italic">
-            <Shield className="w-3 h-3" /> PQC_ACTIVE
+
+        {/* Right: status + shield */}
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="flex items-center justify-end gap-1.5">
+              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotClass}`} />
+              <span className="text-[9px] font-mono font-black tracking-widest text-zinc-400 uppercase">
+                {status}
+              </span>
+            </div>
+            <div className="text-[7px] font-mono text-orange-900/60 tracking-widest uppercase mt-0.5">
+              PKT/{messages.length.toString().padStart(4, "0")}
+            </div>
+          </div>
+          <div className="w-8 h-8 border border-orange-900/50 bg-orange-950/20 flex items-center justify-center flex-shrink-0">
+            <Shield className="w-3.5 h-3.5 text-orange-700" />
           </div>
         </div>
       </header>
 
-      <main className="flex-1 p-6 overflow-y-auto z-10 space-y-4">
+      {/* ── Messages ──────────────────────────────────────────────────────── */}
+      <main className="flex-1 px-5 py-4 overflow-y-auto z-10 space-y-3 chat-scroll min-h-0">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center opacity-30">
-            <div className="p-5 border border-orange-900/30 rounded-none rotate-45 mb-6">
-              <Lock className="w-6 h-6 text-orange-900 -rotate-45" />
+          <div className="h-full flex flex-col items-center justify-center gap-3 select-none">
+            <div className="p-4 border border-orange-900/30 rotate-45 opacity-20">
+              <Lock className="w-5 h-5 text-orange-800 -rotate-45" />
             </div>
-            <p className="text-[10px] font-black tracking-[0.4em] text-zinc-600 uppercase">Initialize_Secure_Comms</p>
+            <p className="text-[9px] font-black tracking-[0.4em] text-zinc-700 uppercase font-mono opacity-40">
+              AWAITING_TRANSMISSION
+            </p>
           </div>
         ) : (
           messages.map((msg, idx) => (
             <div key={idx} className={`flex ${msg.sender === "me" ? "justify-end" : "justify-start"}`}>
-              <div
-                className={`max-w-[75%] shadow-sm border ${msg.sender === "me" ? "bg-slate-900 text-white border-slate-800" : "bg-white/80 text-slate-800 border-slate-200"}`}
-                style={{ clipPath: msg.sender === "me" ? "polygon(0 0, 100% 0, 100% 85%, 95% 100%, 0 100%)" : "polygon(5% 0, 100% 0, 100% 100%, 0 100%, 0 15%)" }}
-              >
+              <div className={`max-w-[72%] ${msg.sender === "me" ? "msg-me bg-orange-950/70 border border-orange-800/40" : "msg-them bg-[#141414] border border-zinc-800/70"}`}>
+
                 {msg.type === "file" ? (
                   <div className="px-4 py-3">
                     {msg.fileMime?.startsWith("image/") && msg.fileUrl ? (
-                      <div className="mb-2">
+                      <div className="mb-2 border border-orange-900/30 overflow-hidden">
                         <img src={msg.fileUrl} alt={msg.fileName}
-                          className="max-w-full max-h-48 object-cover rounded-none border border-white/10"
+                          className="max-w-full max-h-44 object-cover w-full"
                           onError={(e) => { e.target.style.display = "none"; }} />
                       </div>
                     ) : (
-                      <div className={`flex items-center gap-3 mb-2 p-3 ${msg.sender === "me" ? "bg-white/10" : "bg-slate-100"}`}>
-                        <FileText className="w-6 h-6 flex-shrink-0 text-cyan-400" />
-                        <span className="text-[10px] font-bold tracking-tight truncate max-w-[160px]">{msg.fileName || "Unknown file"}</span>
+                      <div className={`flex items-center gap-3 mb-2 px-3 py-2 border ${msg.sender === "me" ? "bg-orange-900/20 border-orange-800/30" : "bg-zinc-900 border-zinc-800"}`}>
+                        <FileText className="w-4 h-4 text-orange-700 flex-shrink-0" />
+                        <span className="text-[9px] font-mono font-bold text-zinc-400 truncate max-w-[140px] uppercase tracking-wide">
+                          {msg.fileName || "UNKNOWN_FILE"}
+                        </span>
                       </div>
                     )}
-
                     {(msg.fileUrl || msg.fileBytes) ? (
                       <button
                         onClick={() => {
                           if (msg.fileBytes) {
-                            const freshBlob = new Blob([msg.fileBytes], { type: msg.fileMime || "application/octet-stream" });
-                            const freshUrl = URL.createObjectURL(freshBlob);
-                            triggerDownload(freshUrl, msg.fileName);
-                            setTimeout(() => URL.revokeObjectURL(freshUrl), 5000);
+                            const b = new Blob([msg.fileBytes], { type: msg.fileMime || "application/octet-stream" });
+                            const u = URL.createObjectURL(b);
+                            triggerDownload(u, msg.fileName);
+                            setTimeout(() => URL.revokeObjectURL(u), 5000);
                           } else if (msg.fileUrl) {
                             triggerDownload(msg.fileUrl, msg.fileName);
                           }
                         }}
-                        className={`flex items-center gap-1.5 text-[9px] font-black tracking-widest uppercase mt-1 cursor-pointer bg-transparent border-none p-0 ${msg.sender === "me" ? "text-cyan-400 hover:text-cyan-300" : "text-cyan-600 hover:text-cyan-500"}`}
+                        className="flex items-center gap-1.5 text-[8px] font-black tracking-widest uppercase text-orange-600 hover:text-orange-500 transition-colors bg-transparent border-none p-0 mt-1 font-mono"
                       >
-                        <Download className="w-3 h-3" /> DOWNLOAD_FILE
+                        <Download className="w-2.5 h-2.5" /> EXTRACT_FILE
                       </button>
                     ) : (
-                      <p className="text-[9px] text-red-400 font-bold uppercase tracking-wider mt-1">⚠ FILE UNAVAILABLE</p>
+                      <p className="text-[8px] text-red-600/70 font-mono font-bold uppercase tracking-wider mt-1">⚠ FILE_CORRUPT</p>
                     )}
-
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
-                      <span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      {msg.sender === "them" && msg.signatureVerified !== null && (
-                        <div className={`text-[8px] font-black tracking-widest flex items-center gap-1 uppercase ${msg.signatureVerified ? "text-emerald-500" : "text-red-500"}`}>
-                          {msg.signatureVerified ? <CheckCircle className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}
-                          {msg.signatureVerified ? "VERIFIED" : "TAMPERED"}
-                        </div>
-                      )}
-                    </div>
+                    <MsgMeta msg={msg} />
                   </div>
                 ) : (
-                  <div className="px-5 py-3">
-                    <p className="text-xs font-medium leading-relaxed">{msg.text}</p>
-                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
-                      <span className="text-[8px] font-black opacity-50 uppercase tracking-tighter">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                      {msg.sender === "them" && msg.signatureVerified !== null && (
-                        <div className={`text-[8px] font-black tracking-widest flex items-center gap-1 uppercase ${msg.signatureVerified ? "text-emerald-500" : "text-red-500"}`}>
-                          {msg.signatureVerified ? <CheckCircle className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}
-                          {msg.signatureVerified ? "VERIFIED" : "TAMPERED"}
-                        </div>
-                      )}
-                    </div>
+                  <div className="px-4 py-2.5">
+                    <p className={`text-[11px] leading-relaxed tracking-wide ${msg.sender === "me" ? "text-orange-100" : "text-zinc-300"}`}>
+                      {msg.text}
+                    </p>
+                    <MsgMeta msg={msg} />
                   </div>
                 )}
               </div>
@@ -635,69 +630,86 @@ export default function WebSocketChatBox({ peer }) {
         <div ref={scrollRef} />
       </main>
 
+      {/* ── File preview strip ────────────────────────────────────────────── */}
       {selectedFile && (
-        <div className="px-6 py-3 bg-cyan-50/80 border-t border-cyan-200 z-10 flex items-center gap-4">
+        <div className="flex-shrink-0 px-5 py-2.5 border-t border-orange-900/40 bg-[#0d0d0d] z-10 flex items-center gap-3">
+          <div className="w-[3px] h-10 bg-orange-600 flex-shrink-0" />
           {selectedFile.previewUrl
-            ? <img src={selectedFile.previewUrl} alt="preview" className="w-12 h-12 object-cover border border-cyan-200" />
-            : <div className="w-12 h-12 bg-slate-100 border border-slate-200 flex items-center justify-center"><FileText className="w-5 h-5 text-slate-400" /></div>}
+            ? <img src={selectedFile.previewUrl} alt="preview" className="w-10 h-10 object-cover border border-orange-900/50 flex-shrink-0" />
+            : <div className="w-10 h-10 bg-orange-950/40 border border-orange-900/40 flex items-center justify-center flex-shrink-0">
+                <FileText className="w-4 h-4 text-orange-800" />
+              </div>}
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest truncate">{selectedFile.file.name}</p>
-            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-              {(selectedFile.file.size / 1024).toFixed(1)} KB · PQC_ENCRYPTED_DIRECT_TRANSFER
+            <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest truncate font-mono">{selectedFile.file.name}</p>
+            <p className="text-[8px] text-zinc-700 font-mono uppercase mt-0.5 tracking-wide">
+              {(selectedFile.file.size / 1024).toFixed(1)} KB · PQC_ARMED
             </p>
           </div>
-          <button onClick={() => { if (selectedFile.previewUrl) URL.revokeObjectURL(selectedFile.previewUrl); setSelectedFile(null); }}
-            className="text-slate-400 hover:text-red-500 transition-colors">
-            <X className="w-4 h-4" />
+          <button
+            onClick={() => { if (selectedFile.previewUrl) URL.revokeObjectURL(selectedFile.previewUrl); setSelectedFile(null); }}
+            className="text-zinc-700 hover:text-red-600 transition-colors flex-shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}
 
-      <footer className="p-6 bg-white/60 backdrop-blur-md border-t border-slate-200 z-10">
-        <div className="flex items-center gap-3">
-          <input ref={fileInputRef} type="file" accept="image/*,application/pdf,.doc,.docx,.txt,.zip"
+      {/* ── Footer / Input ────────────────────────────────────────────────── */}
+      <footer className="flex-shrink-0 px-5 py-3.5 border-t border-orange-900/40 bg-[#0d0d0d] z-10">
+        <div className="flex items-center gap-2">
+          {/* Attach button */}
+          <input ref={fileInputRef} type="file"
+            accept="image/*,application/pdf,.doc,.docx,.txt,.zip"
             className="hidden" onChange={handleFileSelect} />
-          <button onClick={() => fileInputRef.current?.click()}
-            disabled={isConnecting || socket.current?.readyState !== WebSocket.OPEN || isUploadingFile}
-            className="p-4 bg-white/80 border border-slate-200 text-slate-400 hover:text-cyan-600 hover:border-cyan-400 transition-all disabled:opacity-40"
-            title="Attach file">
-            <Paperclip className="w-4 h-4" />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={!canSend}
+            className="flex-shrink-0 w-9 h-9 border border-orange-900/50 bg-orange-950/20 text-orange-800 hover:text-orange-500 hover:border-orange-700/60 transition-colors disabled:opacity-30 flex items-center justify-center"
+          >
+            <Paperclip className="w-3.5 h-3.5" />
           </button>
-          <div className="relative flex-1">
-            <input type="text" value={input} onChange={(e) => setInput(e.target.value)}
-              placeholder={selectedFile ? "Add a message or just send the file..." : "ENCRYPT_DATA_PACKET..."}
+
+          {/* Text input */}
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={selectedFile ? "OPTIONAL_MSG..." : "TRANSMIT_PAYLOAD..."}
               onKeyDown={(e) => { if (e.key === "Enter") { if (selectedFile) sendFile(); else if (input.trim()) sendMessage(); } }}
-              className="w-full px-5 py-4 bg-white/80 border border-slate-200 text-xs font-bold tracking-tight text-slate-900 placeholder-slate-300 focus:outline-none focus:border-cyan-500 transition-all rounded-none"
-              disabled={isConnecting || socket.current?.readyState !== WebSocket.OPEN || isUploadingFile} />
+              disabled={!canSend}
+              className="w-full px-4 py-2 bg-[#111111] border border-zinc-800/80 text-[11px] font-mono text-orange-100 placeholder-zinc-700 focus:outline-none focus:border-orange-800/60 transition-colors disabled:opacity-40 tracking-wide pr-8"
+            />
+            {/* Blinking cursor accent */}
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 w-px h-3 bg-orange-700/50 animate-pulse" />
           </div>
-          <button onClick={selectedFile ? sendFile : sendMessage}
-            disabled={(!input.trim() && !selectedFile) || isConnecting || socket.current?.readyState !== WebSocket.OPEN || isUploadingFile}
-            style={{ clipPath: "polygon(15% 0, 100% 0, 100% 75%, 85% 100%, 0 100%, 0 25%)" }}
-            className="px-8 py-4 bg-slate-900 text-white hover:bg-cyan-600 transition-all duration-300 disabled:bg-slate-200 disabled:text-slate-400 flex items-center gap-2">
+
+          {/* Send button */}
+          <button
+            onClick={selectedFile ? sendFile : sendMessage}
+            disabled={(!input.trim() && !selectedFile) || !canSend}
+            style={{ clipPath: "polygon(12% 0, 100% 0, 100% 72%, 88% 100%, 0 100%, 0 28%)" }}
+            className="flex-shrink-0 px-5 py-2 bg-orange-800 hover:bg-orange-700 text-white transition-colors disabled:bg-zinc-800 disabled:text-zinc-600 flex items-center gap-2 font-black text-[9px] tracking-widest uppercase font-mono"
+          >
             {isUploadingFile || isConnecting
-              ? <Loader2 className="w-4 h-4 animate-spin" />
+              ? <Loader2 className="w-3 h-3 animate-spin" />
               : selectedFile
-                ? <><Image className="w-3.5 h-3.5" /><span className="text-[10px] font-black tracking-widest">SEND_FILE</span></>
-                : <><Send className="w-3.5 h-3.5" /><span className="text-[10px] font-black tracking-widest">TRANSMIT</span></>}
+                ? <><Zap className="w-3 h-3" /> SEND</>
+                : <><Send className="w-3 h-3" /> TX</>}
           </button>
         </div>
-        <div className="flex items-center justify-between mt-3 text-[8px] font-black tracking-[0.2em] text-zinc-600 uppercase">
-          <span className="flex items-center gap-1"><Shield className="w-2.5 h-2.5 text-orange-600" /> SECURE_TUNNEL: ENABLED</span>
-          <span>PACKETS: {messages.length}</span>
+
+        {/* Bottom meta bar */}
+        <div className="flex items-center justify-between mt-2 text-[7px] font-mono tracking-widest uppercase">
+          <span className="flex items-center gap-1.5 text-zinc-700">
+            <Shield className="w-2.5 h-2.5 text-orange-900" />
+            ML-KEM-768 + ML-DSA-65
+          </span>
+          <span className={isWsReady ? "text-orange-800" : "text-zinc-700"}>
+            {isWsReady ? "◉ LIVE" : "◌ OFFLINE"}
+          </span>
         </div>
       </footer>
-      
-      <style>{`
-        ::-webkit-scrollbar {
-          width: 3px;
-        }
-        ::-webkit-scrollbar-thumb {
-          background: #442200;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: #ea580c;
-        }
-      `}</style>
     </div>
   );
 }

@@ -56,7 +56,7 @@ export default function Home() {
           </div>
           
           <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white uppercase italic">
-            SECURE<span className="text-orange-500 drop-shadow-[0_0_15px_rgba(255,102,0,0.5)]">OPS</span>
+            ADSEC-<span className="text-orange-500 drop-shadow-[0_0_15px_rgba(255,102,0,0.5)]">COM</span>
           </h1>
           
           <p className="max-w-xl mx-auto text-zinc-400 font-medium tracking-tight text-lg">
